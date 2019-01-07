@@ -1,11 +1,9 @@
 package ginSwagger
 
 import (
-	"html/template"
-	"os"
-	"regexp"
-
 	"golang.org/x/net/webdav"
+	"html/template"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/swag"
@@ -49,21 +47,6 @@ func WrapHandler(h *webdav.Handler) gin.HandlerFunc {
 
 		}
 	}
-}
-
-// DisablingWrapHandler turn handler off
-// if specified environment variable passed
-func DisablingWrapHandler(h *webdav.Handler, envName string) gin.HandlerFunc {
-	eFlag := os.Getenv(envName)
-	if eFlag != "" {
-		return func(c *gin.Context) {
-			// Simulate behavior when route unspecified and
-			// return 404 HTTP code
-			c.String(404, "")
-		}
-	}
-
-	return WrapHandler(h)
 }
 
 const swagger_index_templ = `<!-- HTML for static distribution bundle build -->

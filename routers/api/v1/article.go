@@ -2,6 +2,7 @@ package v1
 
 import (
 	"ginproject/models"
+	"ginproject/pkg/app"
 	"ginproject/pkg/e"
 	"ginproject/pkg/logging"
 	"ginproject/pkg/setting"
@@ -79,7 +80,7 @@ func GetArticles(c *gin.Context) {
 	if ! valid.HasErrors() {
 		code = e.SUCCESS
 
-		data["lists"] = models.GetArticles(util.GetPage(c), setting.PageSize, maps)
+		data["lists"] = models.GetArticles(util.GetPage(c), setting.AppSetting.PageSize, maps)
 		data["total"] = models.GetArticleTotal(maps)
 
 	} else {
@@ -106,12 +107,14 @@ func GetArticles(c *gin.Context) {
 // @Success 200 {string} json "{"code":200,"data":{},"msg":"ok"}"
 // @Router /api/v1/articles [post]
 func AddArticle(c *gin.Context) {
+	appG := app.Gin{c}
 	tagId := com.StrTo(c.Query("tag_id")).MustInt()
-	title := c.Query("title")
-	desc := c.Query("desc")
-	content := c.Query("content")
-	createdBy := c.Query("created_by")
-	state := com.StrTo(c.DefaultQuery("state", "0")).MustInt()
+	title := c.PostForm("title")
+	desc := c.PostForm("desc")
+	content := c.PostForm("content")
+	createdBy := c.PostForm("created_by")
+	coverImageUrl := c.PostForm("cover_image_url")
+	state := com.StrTo(c.DefaultPostForm("state", "0")).MustInt()
 
 	valid := validation.Validation{}
 	valid.Min(tagId, 1, "tag_id").Message("标签ID必须大于0")
@@ -120,6 +123,14 @@ func AddArticle(c *gin.Context) {
 	valid.Required(content, "content").Message("内容不能为空")
 	valid.Required(createdBy, "created_by").Message("创建人不能为空")
 	valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
+	valid.Required(coverImageUrl, "cover_image_url").Message("封面地址不能为空")
+	valid.MaxSize(coverImageUrl, 255, "cover_image_url").Message("封面地址最长为255字符")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
 
 	code := e.INVALID_PARAMS
 	if ! valid.HasErrors() {
@@ -131,6 +142,7 @@ func AddArticle(c *gin.Context) {
 			data["content"] = content
 			data["created_by"] = createdBy
 			data["state"] = state
+			data["cover_image_url"] = coverImageUrl
 
 			models.AddArticle(data)
 			code = e.SUCCESS
@@ -166,11 +178,12 @@ func EditArticle(c *gin.Context) {
 	valid := validation.Validation{}
 
 	id := com.StrTo(c.Param("id")).MustInt()
-	tagId := com.StrTo(c.Query("tag_id")).MustInt()
-	title := c.Query("title")
-	desc := c.Query("desc")
-	content := c.Query("content")
-	modifiedBy := c.Query("modified_by")
+	tagId := com.StrTo(c.PostForm("tag_id")).MustInt()
+	title := c.PostForm("title")
+	desc := c.PostForm("desc")
+	content := c.PostForm("content")
+	modifiedBy := c.PostForm("modified_by")
+	coverImageUrl := c.PostForm("cover_image_url")
 
 	var state int = -1
 	if arg := c.Query("state"); arg != "" {
@@ -184,7 +197,8 @@ func EditArticle(c *gin.Context) {
 	valid.MaxSize(content, 65535, "content").Message("内容最长为65535字符")
 	valid.Required(modifiedBy, "modified_by").Message("修改人不能为空")
 	valid.MaxSize(modifiedBy, 100, "modified_by").Message("修改人最长为100字符")
-
+	valid.Required(coverImageUrl, "cover_image_url").Message("封面地址不能为空")
+	valid.MaxSize(coverImageUrl, 255, "cover_image_url").Message("封面地址最长为255字符")
 	code := e.INVALID_PARAMS
 	if ! valid.HasErrors() {
 		if models.ExistArticleByID(id) {
@@ -204,6 +218,7 @@ func EditArticle(c *gin.Context) {
 				}
 
 				data["modified_by"] = modifiedBy
+				data["cover_image_url"] = coverImageUrl
 
 				models.EditArticle(id, data)
 				code = e.SUCCESS

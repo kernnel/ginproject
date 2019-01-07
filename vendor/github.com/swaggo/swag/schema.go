@@ -19,11 +19,6 @@ func IsPrimitiveType(typeName string) bool {
 	}
 }
 
-// IsNumericType determines whether the swagger type name is a numeric type
-func IsNumericType(typeName string) bool {
-	return typeName == "integer" || typeName == "number"
-}
-
 // TransToValidSchemeType indicates type will transfer golang basic type to swagger supported type.
 func TransToValidSchemeType(typeName string) string {
 	switch typeName {

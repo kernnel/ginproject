@@ -1,22 +1,24 @@
 package models
 
-import (
-	"github.com/jinzhu/gorm"
-	"time"
-)
-
 type Article struct {
 	Model
 
 	TagID int `json:"tag_id" gorm:"index"`
 	Tag   Tag `json:"tag"`
 
-	Title      string `json:"title"`
-	Desc       string `json:"desc"`
-	Content    string `json:"content"`
-	CreatedBy  string `json:"created_by"`
-	ModifiedBy string `json:"modified_by"`
-	State      int    `json:"state"`
+	Title         string `json:"title"`
+	Desc          string `json:"desc"`
+	Content       string `json:"content"`
+	CreatedBy     string `json:"created_by"`
+	ModifiedBy    string `json:"modified_by"`
+	CoverImageUrl string `json:"cover_image_url"`
+	State         int    `json:"state"`
+}
+
+func CleanAllArticle() bool {
+	db.Unscoped().Where("deleted_on != ? ", 0).Delete(&Article{})
+
+	return true
 }
 
 func ExistArticleByID(id int) bool {
@@ -57,12 +59,13 @@ func EditArticle(id int, data interface{}) bool {
 
 func AddArticle(data map[string]interface{}) bool {
 	db.Create(&Article{
-		TagID:     data["tag_id"].(int),
-		Title:     data["title"].(string),
-		Desc:      data["desc"].(string),
-		Content:   data["content"].(string),
-		CreatedBy: data["created_by"].(string),
-		State:     data["state"].(int),
+		TagID:         data["tag_id"].(int),
+		Title:         data["title"].(string),
+		Desc:          data["desc"].(string),
+		Content:       data["content"].(string),
+		CreatedBy:     data["created_by"].(string),
+		CoverImageUrl: data["cover_image_url"].(string),
+		State:         data["state"].(int),
 	})
 
 	return true
@@ -72,16 +75,4 @@ func DeleteArticle(id int) bool {
 	db.Where("id = ?", id).Delete(Article{})
 
 	return true
-}
-
-func (article *Article) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("CreatedOn", time.Now().Unix())
-
-	return nil
-}
-
-func (article *Article) BeforeUpdate(scope *gorm.Scope) error {
-	scope.SetColumn("ModifiedOn", time.Now().Unix())
-
-	return nil
 }

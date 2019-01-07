@@ -4,12 +4,14 @@ import (
 	_ "ginproject/docs"
 	"ginproject/middleware/jwt"
 	"ginproject/pkg/setting"
+	"ginproject/pkg/upload"
 	"ginproject/routers/api"
 	"ginproject/routers/api/v1"
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -24,13 +26,16 @@ func InitRouter() *gin.Engine {
 	f, _ := os.Create("gin.log")
 	gin.DefaultWriter = io.MultiWriter(f)
 
-	gin.SetMode(setting.RunMode)
+	gin.SetMode(setting.ServerSetting.RunMode)
 
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "test",
 		})
 	})
+
+	r.POST("/upload", api.UploadImage)
+	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 
 	r.GET("/auth", api.GetAuth)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
